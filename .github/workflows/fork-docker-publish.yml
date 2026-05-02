@@ -31,7 +31,7 @@ jobs:
           cache: maven
 
       - name: Build WAR with Maven
-        run: ./mvnw -B -DskipTests -DexcludedGroups=IntegrationTest package
+        run: ./mvnw -B -DskipTests -DexcludedGroups=IntegrationTest -pl structurizr-application -am package
 
       - name: Set up QEMU
         if: github.event_name != 'pull_request'
