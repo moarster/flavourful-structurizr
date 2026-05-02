@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":semanticCommits"
+  ],
+  "description": "Fork-only update scope: GitHub Actions used in fork workflows, and the Docker base image. Maven dependencies are owned upstream and intentionally left to the vendor sync.",
+  "enabledManagers": ["github-actions", "dockerfile"],
+  "dockerfile": {
+    "managerFilePatterns": [
+      "/structurizr-application/Dockerfiles/eclipse-temurin-noble$/"
+    ]
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "github-actions",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["eclipse-temurin"],
+      "groupName": "eclipse-temurin base image"
+    }
+  ],
+  "labels": ["dependencies"],
+  "prHourlyLimit": 2
+}

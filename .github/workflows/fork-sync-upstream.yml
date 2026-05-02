@@ -1,0 +1,81 @@
+name: Fork — Sync upstream
+
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  UPSTREAM_REMOTE_URL: https://github.com/structurizr/structurizr.git
+  UPSTREAM_BRANCH: main
+  LOCAL_BRANCH: main
+  PR_BRANCH: chore/sync-upstream
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fork (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ env.LOCAL_BRANCH }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "$UPSTREAM_REMOTE_URL"
+          git fetch upstream "$UPSTREAM_BRANCH"
+
+      - name: Stop if already up to date
+        id: check
+        run: |
+          local_sha=$(git rev-parse HEAD)
+          upstream_sha=$(git rev-parse "upstream/$UPSTREAM_BRANCH")
+          echo "local=$local_sha"     >> "$GITHUB_OUTPUT"
+          echo "upstream=$upstream_sha" >> "$GITHUB_OUTPUT"
+          if [ "$local_sha" = "$upstream_sha" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true"  >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Fast-forward main and push
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          git merge --ff-only "upstream/$UPSTREAM_BRANCH"
+          git push origin "$LOCAL_BRANCH"
+
+      - name: Open sync PR into fork/main
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch origin fork/main
+          git checkout -B "$PR_BRANCH" origin/fork/main
+
+          if ! git merge --no-edit "upstream/$UPSTREAM_BRANCH"; then
+            git merge --abort || true
+            echo "::warning::Merge conflicts detected; opening draft PR with conflict markers."
+            git merge --no-commit --no-ff "upstream/$UPSTREAM_BRANCH" || true
+            git commit -am "chore: sync upstream (conflicts — manual resolution required)" || true
+          fi
+
+          git push -f origin "$PR_BRANCH"
+
+          if ! gh pr view "$PR_BRANCH" --json number >/dev/null 2>&1; then
+            gh pr create \
+              --base fork/main \
+              --head "$PR_BRANCH" \
+              --title "chore: sync upstream Structurizr" \
+              --body  "Automated sync of upstream \`structurizr/structurizr@${{ steps.check.outputs.upstream }}\` into \`fork/main\`. Review the diff and resolve any conflicts before merging."
+          fi

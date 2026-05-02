@@ -1,3 +1,7 @@
+// Modified 2026 by Flavourful Structurizr — wires additional markdown-it
+// plugins through structurizr-markdown-extensions.js. See CHANGES.md.
+// Original work Copyright Structurizr contributors, Apache License 2.0.
+
 // this code renders the following items in Markdown/AsciiDoc documentation:
 // - images that are embedded in the workspace (as base64 data uris)
 // - diagrams from the workspace (as iframe embeds)
@@ -12,6 +16,12 @@ structurizr.ui.ContentRenderer = function(workspace, host, urlPrefix, branch, sa
     });
 
     md.use(window.markdownitFootnote);
+
+    // Extension hook: lets a separate file register additional markdown-it plugins
+    // without further modifications to this upstream-tracked file.
+    if (typeof window.structurizrExtendMarkdownIt === 'function') {
+        window.structurizrExtendMarkdownIt(md);
+    }
 
     md.renderer.rules.image = function(tokens, idx, options, env, self) {
         var token = tokens[idx];

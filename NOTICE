@@ -1,0 +1,18 @@
+Flavourful Structurizr
+Copyright 2026 moarster
+
+This product is a derivative work of Structurizr
+(https://github.com/structurizr/structurizr),
+Copyright Simon Brown and Structurizr contributors,
+licensed under the Apache License, Version 2.0.
+
+Modifications introduced by Flavourful Structurizr are summarised in
+CHANGES.md and marked at the top of each affected source file.
+
+This product bundles the following third-party JavaScript libraries,
+each distributed under the MIT License (see the license headers
+inside each minified bundle for full text and copyright notices):
+
+  - markdown-it plugins: abbr, anchor, attrs, container, deflist,
+    emoji, ins, mark, sub, sup, task-lists
+    (https://github.com/markdown-it)
